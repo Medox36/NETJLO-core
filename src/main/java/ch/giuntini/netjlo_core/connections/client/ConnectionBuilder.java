@@ -1,13 +1,13 @@
 package ch.giuntini.netjlo_core.connections.client;
 
-import ch.giuntini.netjlo_base.connections.client.sockets.BaseSocket;
-import ch.giuntini.netjlo_base.packages.BasePackage;
+import ch.giuntini.netjlo_core.connections.client.sockets.BaseSocket;
+import ch.giuntini.netjlo_core.packages.BasePackage;
 import ch.giuntini.netjlo_core.interpreter.Interpretable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.SocketException;
 
-public class ConnectionBuilder<S extends BaseSocket, P extends BasePackage, I extends Interpretable<P>> {
+public class ConnectionBuilder<S extends BaseSocket, P extends BasePackage<?>, I extends Interpretable<P>> {
     protected Class<S> socketC;
     protected Class<P> packC;
     protected Class<I> interpreterC;

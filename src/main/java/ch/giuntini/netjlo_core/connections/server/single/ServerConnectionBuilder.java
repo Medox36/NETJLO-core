@@ -1,15 +1,15 @@
 package ch.giuntini.netjlo_core.connections.server.single;
 
-import ch.giuntini.netjlo_base.connections.client.sockets.BaseSocket;
-import ch.giuntini.netjlo_base.connections.server.sockets.CustomServerSocket;
-import ch.giuntini.netjlo_base.packages.BasePackage;
+import ch.giuntini.netjlo_core.connections.client.sockets.BaseSocket;
+import ch.giuntini.netjlo_core.connections.server.sockets.BaseServerSocket;
+import ch.giuntini.netjlo_core.packages.BasePackage;
 import ch.giuntini.netjlo_core.interpreter.Interpretable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.SocketException;
 
 public class ServerConnectionBuilder
-        <T extends CustomServerSocket<S>, S extends BaseSocket, P extends BasePackage, I extends Interpretable<P>> {
+        <T extends BaseServerSocket<S>, S extends BaseSocket, P extends BasePackage<?>, I extends Interpretable<P>> {
 
     protected T serverSocket;
     protected Class<T> serverSocketC;

@@ -1,15 +1,15 @@
 package ch.giuntini.netjlo_core.connections.server.multiple;
 
-import ch.giuntini.netjlo_base.connections.client.sockets.BaseSocket;
-import ch.giuntini.netjlo_base.connections.server.sockets.CustomServerSocket;
-import ch.giuntini.netjlo_base.packages.BasePackage;
+import ch.giuntini.netjlo_core.connections.client.sockets.BaseSocket;
+import ch.giuntini.netjlo_core.connections.server.sockets.BaseServerSocket;
+import ch.giuntini.netjlo_core.packages.BasePackage;
 import ch.giuntini.netjlo_core.connections.client.Connection;
 import ch.giuntini.netjlo_core.interpreter.Interpretable;
 
 import java.io.IOException;
 
 public class ActiveServerConnection
-        <T extends CustomServerSocket<S>, S extends BaseSocket, P extends BasePackage, I extends Interpretable<P>>
+        <T extends BaseServerSocket<S>, S extends BaseSocket, P extends BasePackage<?>, I extends Interpretable<P>>
         extends Connection<S, P, I> {
 
     private final MultipleServerConnection<T, S, P, I> parent;

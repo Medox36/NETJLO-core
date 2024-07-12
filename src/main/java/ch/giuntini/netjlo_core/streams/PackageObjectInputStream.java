@@ -1,6 +1,6 @@
 package ch.giuntini.netjlo_core.streams;
 
-import ch.giuntini.netjlo_base.packages.BasePackage;
+import ch.giuntini.netjlo_core.packages.BasePackage;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,7 +8,7 @@ import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 
-public class PackageObjectInputStream<P extends BasePackage> extends ObjectInputStream {
+public class PackageObjectInputStream<P extends BasePackage<?>> extends ObjectInputStream {
 
     private final Class<P> pack;
 

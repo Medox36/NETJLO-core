@@ -1,19 +1,21 @@
 package ch.giuntini.netjlo_core.connections.server.single;
 
-import ch.giuntini.netjlo_base.connections.client.sockets.BaseSocket;
-import ch.giuntini.netjlo_base.connections.server.Acceptable;
-import ch.giuntini.netjlo_base.connections.server.sockets.CustomServerSocket;
-import ch.giuntini.netjlo_base.packages.BasePackage;
-import ch.giuntini.netjlo_base.socket.Disconnectable;
+import ch.giuntini.netjlo_core.connections.client.sockets.BaseSocket;
+import ch.giuntini.netjlo_core.connections.server.Acceptable;
+import ch.giuntini.netjlo_core.connections.server.sockets.BaseServerSocket;
+import ch.giuntini.netjlo_core.packages.BasePackage;
+import ch.giuntini.netjlo_core.socket.Disconnectable;
 import ch.giuntini.netjlo_core.connections.client.Connection;
 import ch.giuntini.netjlo_core.interpreter.Interpretable;
 import ch.giuntini.netjlo_core.socket.Send;
+import ch.giuntini.netjlo_core.socket.Terminable;
 
 import java.io.IOException;
+import java.util.List;
 
 public class ServerConnection
-        <T extends CustomServerSocket<S>, S extends BaseSocket, P extends BasePackage, I extends Interpretable<P>>
-        implements Acceptable, Disconnectable, Send<P> {
+        <T extends BaseServerSocket<S>, S extends BaseSocket, P extends BasePackage<?>, I extends Interpretable<P>>
+        implements Acceptable, Disconnectable, Send<P>, Terminable {
 
     private Connection<S, P, I> connection;
     protected final T serverSocket;
@@ -41,5 +43,22 @@ public class ServerConnection
     @Override
     public void send(P pack) {
         connection.send(pack);
+    }
+
+    @Override
+    public void terminate() throws IOException {
+        connection.terminate();
+        serverSocket.close();
+    }
+
+    public boolean haveAllPackagesBeenSent() {
+        return getRemainingPackages().isEmpty();
+    }
+
+    public List<P> getRemainingPackages() {
+        if (connection == null) {
+            throw new IllegalStateException("connection not yet connected");
+        }
+        return connection.getRemainingPackages();
     }
 }

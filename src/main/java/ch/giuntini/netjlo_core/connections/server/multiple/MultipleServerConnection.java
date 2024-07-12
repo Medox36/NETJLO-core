@@ -1,25 +1,25 @@
 package ch.giuntini.netjlo_core.connections.server.multiple;
 
-import ch.giuntini.netjlo_base.connections.client.sockets.BaseSocket;
-import ch.giuntini.netjlo_base.connections.server.Acceptable;
-import ch.giuntini.netjlo_base.connections.server.sockets.CustomServerSocket;
-import ch.giuntini.netjlo_base.packages.BasePackage;
-import ch.giuntini.netjlo_base.socket.Disconnectable;
+import ch.giuntini.netjlo_core.connections.client.sockets.BaseSocket;
+import ch.giuntini.netjlo_core.connections.server.Acceptable;
+import ch.giuntini.netjlo_core.connections.server.sockets.BaseServerSocket;
+import ch.giuntini.netjlo_core.packages.BasePackage;
+import ch.giuntini.netjlo_core.socket.Disconnectable;
 import ch.giuntini.netjlo_core.interpreter.Interpretable;
 import ch.giuntini.netjlo_core.socket.Send;
+import ch.giuntini.netjlo_core.socket.Terminable;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MultipleServerConnection
-        <T extends CustomServerSocket<S>, S extends BaseSocket, P extends BasePackage, I extends Interpretable<P>>
-        implements Acceptable, AutoCloseable, Disconnectable, Send<P> {
+        <T extends BaseServerSocket<S>, S extends BaseSocket, P extends BasePackage<?>, I extends Interpretable<P>>
+        implements Acceptable, AutoCloseable, Disconnectable, Send<P>, Terminable {
 
-    private final Class<T> serverSocketC;
-    private final Class<S> socketC;
     private final Class<P> packC;
     private final Class<I> interpreterC;
 
@@ -30,15 +30,8 @@ public class MultipleServerConnection
 
     private final List<ActiveServerConnection<T, S, P, I>> CONNECTIONS = Collections.synchronizedList(new LinkedList<>());
 
-    public MultipleServerConnection(
-            T serverSocket, Class<T>
-            serverSocketC, Class<S> socketC,
-            Class<P> packC,
-            Class<I> interpreterC
-    ) {
+    public MultipleServerConnection(T serverSocket, Class<P> packC, Class<I> interpreterC) {
         this.serverSocket = serverSocket;
-        this.serverSocketC = serverSocketC;
-        this.socketC = socketC;
         this.packC = packC;
         this.interpreterC = interpreterC;
     }
@@ -60,13 +53,9 @@ public class MultipleServerConnection
         this.maxConnectionCount = maxConnectionCount;
     }
 
-    public synchronized void removeClosedActiveConnection(ActiveServerConnection<T, S, P, I> connection) {
+    public void removeClosedActiveConnection(ActiveServerConnection<T, S, P, I> connection) {
         CONNECTIONS.remove(connection);
         activeConnectionCount.decrementAndGet();
-    }
-
-    public Class<?>[] getTypes() {
-        return new Class[]{serverSocketC, socketC, packC, interpreterC};
     }
 
     public ActiveServerConnection<T, S, P, I> getConnection(int index) {
@@ -78,24 +67,65 @@ public class MultipleServerConnection
     }
 
     @Override
-    public void sendAll(P pack) {
-        CONNECTIONS.forEach(spiActiveServerConnection -> spiActiveServerConnection.send(pack));
+    public void sendToAll(P pack) {
+        synchronized (CONNECTIONS) {
+            CONNECTIONS.forEach(spiActiveServerConnection -> spiActiveServerConnection.send(pack));
+        }
     }
 
     @Override
     public void disconnect() throws IOException {
-        CONNECTIONS.forEach(spiActiveServerConnection -> {
-            try {
-                spiActiveServerConnection.disconnect();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+        close();
         serverSocket.close();
+        synchronized (CONNECTIONS) {
+            CONNECTIONS.forEach(spiActiveServerConnection -> {
+                try {
+                    spiActiveServerConnection.disconnect();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
     }
 
     @Override
     public void close() {
         stop = true;
+    }
+
+    @Override
+    public void terminate() throws IOException {
+        close();
+        serverSocket.close();
+        synchronized (CONNECTIONS) {
+            CONNECTIONS.forEach(spiActiveServerConnection -> {
+                try {
+                    spiActiveServerConnection.terminate();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+
+    public boolean haveAllConnectionsBeenClosed() {
+        synchronized (CONNECTIONS) {
+            return getRemainingConnections().isEmpty();
+        }
+    }
+
+    public List<ActiveServerConnection<T, S, P, I>> getRemainingConnections() {
+        if (!stop || !serverSocket.isClosed()) {
+            throw new IllegalStateException("Server not closed");
+        }
+        List<ActiveServerConnection<T, S, P, I>> remainingConnections = new ArrayList<>();
+        synchronized (CONNECTIONS) {
+            CONNECTIONS.forEach(activeServerConnection -> {
+                if (activeServerConnection.isOpen()) {
+                    remainingConnections.add(activeServerConnection);
+                }
+            });
+        }
+        return remainingConnections;
     }
 }
